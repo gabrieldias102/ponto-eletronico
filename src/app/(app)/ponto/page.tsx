@@ -9,6 +9,8 @@ import { formatLongDay } from "@/lib/time";
 import { requirePermission } from "@/server/auth/session";
 import { getOrganization } from "@/server/organization";
 import { entriesOfDay, getRequirementsFor } from "@/server/time-entries";
+import { scheduleWindow } from "@/server/schedules";
+import { describePeriods } from "@/lib/schedule";
 import { PunchPanel } from "./punch-panel";
 
 export const metadata: Metadata = { title: "Registrar ponto" };
@@ -30,11 +32,29 @@ function describeBusinessHours(start: string, end: string, days: number[]) {
 export default async function PunchPage({ searchParams }: { searchParams: Promise<{ qr?: string }> }) {
   const user = await requirePermission("punch:own");
   const { qr } = await searchParams;
-  const [requirements, today, organization] = await Promise.all([
+  const [requirements, today, organization, window] = await Promise.all([
     getRequirementsFor(user.id),
     entriesOfDay(user.id),
     getOrganization(),
+    scheduleWindow(user.id, new Date()),
   ]);
+
+  const hours = window.hasSchedule
+    ? {
+        kind: "schedule" as const,
+        text:
+          window.today.holiday && window.today.periods.length === 0
+            ? `Feriado (${window.today.holiday})`
+            : describePeriods(window.today.periods),
+      }
+    : {
+        kind: "business" as const,
+        text: describeBusinessHours(
+          organization.businessHoursStart,
+          organization.businessHoursEnd,
+          organization.businessDays,
+        ),
+      };
 
   return (
     <>
@@ -53,11 +73,7 @@ export default async function PunchPage({ searchParams }: { searchParams: Promis
           requirements={requirements}
           qrToken={qr?.slice(0, 64) ?? null}
           limitReached={today.length >= MAX_PUNCHES_PER_DAY}
-          businessHours={describeBusinessHours(
-            organization.businessHoursStart,
-            organization.businessHoursEnd,
-            organization.businessDays,
-          )}
+          hours={hours}
         />
 
         <section>

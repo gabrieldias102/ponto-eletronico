@@ -3,11 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { fieldErrorsFrom, type ActionState } from "@/lib/action-state";
-import { requiresDepartment } from "@/lib/permissions";
+import { canManageUser, requiresDepartment } from "@/lib/permissions";
 import { userPunchOverridesSchema, userSchema } from "@/lib/validation";
 import { requirePermission } from "@/server/auth/session";
 import { toActionState } from "@/server/errors";
-import { createUser, resendInvite, updateUser } from "@/server/users";
+import { assignSchedule, removeAssignment } from "@/server/schedules";
+import { createUser, getUser, resendInvite, updateUser } from "@/server/users";
 
 export async function saveUser(id: string | null, _prev: ActionState, formData: FormData): Promise<ActionState> {
   const actor = await requirePermission("users:manage");
@@ -55,4 +56,39 @@ export async function resendInviteAction(id: string): Promise<ActionState> {
     return toActionState(error);
   }
   return { ok: true, message: "Convite reenviado." };
+}
+
+export async function assignScheduleAction(userId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
+  const actor = await requirePermission("users:manage");
+  const scheduleId = String(formData.get("scheduleId") ?? "");
+  const startDate = String(formData.get("startDate") ?? "");
+  if (!scheduleId) return { ok: false, fieldErrors: { scheduleId: "Selecione a jornada." } };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return { ok: false, fieldErrors: { startDate: "Informe a data." } };
+
+  const target = await getUser(userId);
+  if (!target || !canManageUser(actor.role, target.role) || !requiresDepartment(target.role)) {
+    return { ok: false, message: "Não é possível atribuir jornada a este usuário." };
+  }
+  try {
+    await assignSchedule(actor, userId, scheduleId, startDate);
+  } catch (error) {
+    return toActionState(error);
+  }
+  revalidatePath(`/usuarios/${userId}`);
+  return { ok: true, message: "Jornada atribuída." };
+}
+
+export async function removeAssignmentAction(userId: string, assignmentId: string): Promise<ActionState> {
+  const actor = await requirePermission("users:manage");
+  const target = await getUser(userId);
+  if (!target || !canManageUser(actor.role, target.role)) {
+    return { ok: false, message: "Não é possível alterar este usuário." };
+  }
+  try {
+    await removeAssignment(actor, userId, assignmentId);
+  } catch (error) {
+    return toActionState(error);
+  }
+  revalidatePath(`/usuarios/${userId}`);
+  return { ok: true, message: "Atribuição removida." };
 }

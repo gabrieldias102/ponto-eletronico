@@ -31,7 +31,8 @@ controle de jornada, solicitação e aprovação de ajustes, e conformidade com 
 | Aprovar/rejeitar ajustes (etapa RH) | ✅ | ✅ | — | — |
 | Cadastrar usuários | ✅ | ✅ | — | — |
 | Cadastrar setores e definir gestores | ✅ | — | — | — |
-| Cadastrar jornadas e feriados | ✅ | — | — | — |
+| Cadastrar jornadas, feriados e tolerância | ✅ | — | — | — |
+| Atribuir jornada a funcionário | ✅ | ✅ | — | — |
 | Configurações gerais e identidade visual | ✅ | — | — | — |
 | Relatórios | ✅ | — | — | — |
 | Logs de auditoria | ✅ | — | — | — |
@@ -72,8 +73,8 @@ controle de jornada, solicitação e aprovação de ajustes, e conformidade com 
 
 - Bater ponto fora do horário previsto na jornada é **permitido**, mas o sistema exibe um aviso de
   confirmação (ex.: _"Você está batendo o ponto fora do horário comercial. Deseja continuar?"_).
-- Até as jornadas individuais existirem (Fase 3), a referência é o **horário comercial da empresa**
-  (início, término e dias úteis), configurado pelo Administrador.
+- A referência é a **jornada do funcionário** (seção 7). Para quem ainda não tem jornada atribuída, vale o
+  **horário comercial da empresa** (início, término e dias úteis), configurado pelo Administrador.
 - A marcação fica sinalizada como "fora do horário".
 
 ### 5.3 Validações configuráveis
@@ -135,9 +136,16 @@ Por **e-mail** e **dentro do sistema**, nos eventos:
 
 ## 7. Jornada
 
-- Cada funcionário tem sua **própria jornada** (horários por dia da semana, escalas como 12x36, meio período, turnos).
-- **Tolerância** de atraso configurável na área de gestão.
-- Cadastro de **feriados** nacionais, estaduais e municipais.
+- Cada funcionário tem sua **própria jornada**, escolhida entre os modelos cadastrados pelo Administrador:
+  - **Semanal**: até 4 períodos por dia da semana (ex.: 08:00–12:00 e 13:00–17:48).
+  - **Escala em ciclo**: N dias a partir de uma data (12x36, 24x48, 6x1…), com turnos noturnos.
+- A jornada do funcionário tem **histórico**: a nova jornada vale a partir de uma data, e as anteriores
+  continuam valendo para os dias passados. Jornada já atribuída não muda de horário; cria-se uma nova versão.
+- **Tolerância** por marcação e por dia, configurável (padrão da CLT: 5 e 10 minutos).
+- **Feriados** nacionais, estaduais e municipais, válidos para toda a empresa, com importação automática dos
+  nacionais do ano. Feriado é folga, exceto nas jornadas marcadas como "trabalha em feriados".
+- O aviso de batida fora do horário (seção 5.2) passa a usar a jornada do funcionário, com uma margem
+  configurável antes e depois de cada período.
 
 ## 8. Cálculos (fase futura)
 

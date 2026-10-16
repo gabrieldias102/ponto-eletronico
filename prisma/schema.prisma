@@ -14,6 +14,19 @@ enum Role {
   EMPLOYEE
 }
 
+enum ScheduleType {
+  /// Períodos por dia da semana
+  WEEKLY
+  /// Ciclo de N dias contado a partir de uma data (12x36, 24x48, 6x1...)
+  CYCLE
+}
+
+enum HolidayScope {
+  NATIONAL
+  STATE
+  MUNICIPAL
+}
+
 /// Configuração única da organização (registro com id "default").
 model Organization {
   id           String  @id @default("default")
@@ -37,6 +50,12 @@ model Organization {
 
   /// Segredo do QR code rotativo do painel. Trocar invalida o painel atual.
   qrSecret String?
+
+  /// Tolerância de atraso/antecipação por marcação e por dia (CLT art. 58, §1º: 5 e 10 min).
+  tolerancePerPunchMinutes     Int @default(5)
+  toleranceDailyMinutes        Int @default(10)
+  /// Margem antes/depois da jornada em que a batida não gera aviso de "fora do horário".
+  scheduleWarningMarginMinutes Int @default(30)
 
   updatedAt DateTime @updatedAt
 
@@ -125,11 +144,12 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  managedDepartments Department[] @relation("DepartmentManager")
-  sessions           Session[]
-  accounts           Account[]
-  auditLogs          AuditLog[]
-  timeEntries        TimeEntry[]
+  managedDepartments  Department[]         @relation("DepartmentManager")
+  sessions            Session[]
+  accounts            Account[]
+  auditLogs           AuditLog[]
+  timeEntries         TimeEntry[]
+  scheduleAssignments ScheduleAssignment[]
 
   @@index([departmentId])
   @@map("users")
@@ -203,4 +223,56 @@ model Verification {
 
   @@index([identifier])
   @@map("verifications")
+}
+
+/// Jornada de trabalho reutilizável.
+model WorkSchedule {
+  id              String       @id @default(cuid())
+  name            String       @unique
+  description     String?
+  type            ScheduleType
+  /// WEEKLY: { "0": [períodos], ..., "6": [...] } (0 = domingo)
+  /// CYCLE:  [[períodos do dia 1], [dia 2], ...]; lista vazia = folga
+  /// Período: { "start": "HH:mm", "end": "HH:mm" }; término <= início atravessa a meia-noite.
+  days            Json
+  /// CYCLE: data (YYYY-MM-DD) que corresponde ao dia 1 do ciclo.
+  cycleStartDate  String?
+  /// Se trabalha em feriados (comum em 12x36). Senão, feriado é folga.
+  worksOnHolidays Boolean      @default(false)
+  active          Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  assignments ScheduleAssignment[]
+
+  @@map("work_schedules")
+}
+
+/// Histórico de jornadas do funcionário. Vale a atribuição com a maior data de início <= dia.
+model ScheduleAssignment {
+  id         String       @id @default(cuid())
+  userId     String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scheduleId String
+  schedule   WorkSchedule @relation(fields: [scheduleId], references: [id], onDelete: Restrict)
+  /// Data local (YYYY-MM-DD) a partir da qual a jornada vale.
+  startDate  String
+  createdAt  DateTime     @default(now())
+
+  @@unique([userId, startDate])
+  @@map("schedule_assignments")
+}
+
+/// Feriado da empresa: folga para jornadas que não trabalham em feriados.
+model Holiday {
+  id        String       @id @default(cuid())
+  /// Data local (YYYY-MM-DD)
+  date      String
+  name      String
+  scope     HolidayScope
+  createdAt DateTime     @default(now())
+
+  @@unique([date, name])
+  @@index([date])
+  @@map("holidays")
 }

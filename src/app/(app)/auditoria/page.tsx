@@ -26,6 +26,16 @@ const ACTION_LABELS: Record<string, string> = {
   "location.update": "Alterou local permitido",
   "location.delete": "Excluiu local permitido",
   "qr.rotate": "Gerou novo QR code do painel",
+  "schedule.create": "Criou jornada",
+  "schedule.update": "Alterou jornada",
+  "schedule.duplicate": "Duplicou jornada",
+  "schedule.delete": "Excluiu jornada",
+  "schedule.assign": "Atribuiu jornada",
+  "schedule.unassign": "Removeu atribuição de jornada",
+  "holiday.create": "Cadastrou feriado",
+  "holiday.delete": "Excluiu feriado",
+  "holiday.import": "Importou feriados nacionais",
+  "tolerance.update": "Alterou tolerância",
 };
 
 export default async function AuditPage({ searchParams }: { searchParams: Promise<{ pagina?: string }> }) {

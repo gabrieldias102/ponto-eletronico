@@ -1,13 +1,18 @@
 import { PageHeader } from "@/components/page-header";
+import { PageTabs } from "@/components/page-tabs";
 import { requirePermission } from "@/server/auth/session";
-import { SettingsTabs } from "./settings-tabs";
+
+const TABS = [
+  { href: "/configuracoes", label: "Empresa" },
+  { href: "/configuracoes/ponto", label: "Registro de ponto" },
+];
 
 export default async function SettingsLayout({ children }: { children: React.ReactNode }) {
   await requirePermission("settings:manage");
   return (
     <>
       <PageHeader title="Configurações" />
-      <SettingsTabs />
+      <PageTabs tabs={TABS} />
       {children}
     </>
   );
