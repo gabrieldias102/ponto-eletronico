@@ -1,7 +1,9 @@
 import "server-only";
 import { Prisma } from "@/generated/prisma/client";
 import { assignableRoles, canManageUser, type Role } from "@/lib/permissions";
-import type { UserInput } from "@/lib/validation";
+import type { UserInput, UserPunchOverrides } from "@/lib/validation";
+
+export type UserData = UserInput & UserPunchOverrides;
 import { audit } from "@/server/audit";
 import type { CurrentUser } from "@/server/auth/session";
 import { db } from "@/server/db";
@@ -16,6 +18,10 @@ const userSelect = {
   active: true,
   departmentId: true,
   department: { select: { id: true, name: true } },
+  punchRequireGeolocation: true,
+  punchRequireGeofence: true,
+  punchRequireSelfie: true,
+  punchRequireQrCode: true,
   createdAt: true,
 } satisfies Prisma.UserSelect;
 
@@ -62,7 +68,7 @@ function isUniqueEmailError(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
 }
 
-export async function createUser(actor: CurrentUser, input: UserInput) {
+export async function createUser(actor: CurrentUser, input: UserData) {
   assertCanAssign(actor, input.role);
   await assertDepartmentExists(input.departmentId);
 
@@ -84,7 +90,7 @@ export async function createUser(actor: CurrentUser, input: UserInput) {
   }
 }
 
-export async function updateUser(actor: CurrentUser, id: string, input: UserInput) {
+export async function updateUser(actor: CurrentUser, id: string, input: UserData) {
   const current = await getUser(id);
   if (!current) throw new DomainError("Usuário não encontrado.");
   if (!canManageUser(actor.role, current.role)) throw new DomainError("Você não pode editar este usuário.");
@@ -109,6 +115,10 @@ export async function updateUser(actor: CurrentUser, id: string, input: UserInpu
     role: current.role,
     departmentId: current.departmentId,
     active: current.active,
+    punchRequireGeolocation: current.punchRequireGeolocation,
+    punchRequireGeofence: current.punchRequireGeofence,
+    punchRequireSelfie: current.punchRequireSelfie,
+    punchRequireQrCode: current.punchRequireQrCode,
   };
 
   try {

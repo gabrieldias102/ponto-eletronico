@@ -22,7 +22,7 @@ export function OrganizationForm({ organization }: Props) {
   const [color, setColor] = useState(organization.primaryColor);
 
   return (
-    <form onSubmit={onSubmit} className="flex max-w-xl flex-col gap-8">
+    <form method="post" onSubmit={onSubmit} className="flex max-w-xl flex-col gap-8">
       <fieldset className="flex flex-col gap-5">
         <legend className="mb-3 text-lg font-semibold">Empresa</legend>
         <Field label="Nome exibido" htmlFor="name" error={errors.name}>

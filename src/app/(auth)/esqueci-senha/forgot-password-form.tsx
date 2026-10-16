@@ -47,7 +47,7 @@ export function ForgotPasswordForm() {
             </AlertDescription>
           </Alert>
         ) : (
-          <form onSubmit={onSubmit} className="flex flex-col gap-4">
+          <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4">
             {error ? (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>

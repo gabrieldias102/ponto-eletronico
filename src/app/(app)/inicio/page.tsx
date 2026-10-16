@@ -6,6 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { can, ROLE_LABELS } from "@/lib/permissions";
 import { requireUser } from "@/server/auth/session";
 import { db } from "@/server/db";
+import { entriesOfDay } from "@/server/time-entries";
+import { formatShortTime } from "@/lib/time";
+import { MAX_PUNCHES_PER_DAY } from "@/lib/punch-rules";
 
 export const metadata: Metadata = { title: "Início" };
 
@@ -15,7 +18,9 @@ export default async function HomePage() {
 
   const showsUsers = can(user.role, "users:manage");
   const showsDepartments = can(user.role, "departments:manage");
-  const [activeUsers, departments, departmentsWithoutManager] = await Promise.all([
+  const punches = can(user.role, "punch:own");
+  const [today, activeUsers, departments, departmentsWithoutManager] = await Promise.all([
+    punches ? entriesOfDay(user.id) : [],
     showsUsers ? db.user.count({ where: { active: true } }) : 0,
     showsDepartments ? db.department.count() : 0,
     showsDepartments ? db.department.count({ where: { managerId: null } }) : 0,
@@ -26,15 +31,22 @@ export default async function HomePage() {
       <PageHeader title={`Olá, ${firstName}!`} description={`Você está como ${ROLE_LABELS[user.role]}.`} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {can(user.role, "punch:own") ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ClockIcon className="size-4" /> Registro de ponto
-              </CardTitle>
-              <CardDescription>Disponível em breve.</CardDescription>
-            </CardHeader>
-          </Card>
+        {punches ? (
+          <Link href="/ponto">
+            <Card className="h-full transition-colors hover:bg-muted/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ClockIcon className="size-4" /> Registrar ponto
+                </CardTitle>
+                <CardDescription>
+                  Hoje: {today.length} de {MAX_PUNCHES_PER_DAY} marcações
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-3xl font-semibold tabular-nums">
+                {today.length > 0 ? `Última às ${formatShortTime(today.at(-1)!.punchedAt)}` : "Nenhuma ainda"}
+              </CardContent>
+            </Card>
+          </Link>
         ) : null}
 
         {showsUsers ? (

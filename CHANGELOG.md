@@ -5,6 +5,29 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ## [Não lançado]
 
+### Adicionado — Fase 2 (registro de ponto)
+
+- Tela **Registrar ponto** com relógio, botão de registro e marcações do dia (até 8 por dia)
+- **NSR** sequencial e sem lacunas em cada marcação
+- **Marcações imutáveis**: o banco recusa UPDATE, DELETE e TRUNCATE na tabela de marcações
+- Aviso e confirmação ao bater ponto **fora do horário comercial**; a marcação fica sinalizada
+- Validações configuráveis pelo Administrador, com exceções por funcionário:
+  - **Localização** registrada na batida
+  - **Cerca virtual** com vários locais permitidos (nome, coordenadas, raio)
+  - **Selfie** ao vivo, armazenada de forma privada
+  - **QR code rotativo** exibido em um painel público (`/painel-qr`), que muda a cada minuto
+- Configurações → **Registro de ponto**: validações padrão, horário comercial, locais permitidos e link do painel
+- **Meu histórico**: marcações do mês com navegação entre meses
+- **Ponto da equipe**: marcações do dia por funcionário, quem está em jornada agora e quem não marcou.
+  O gestor vê os setores que gerencia; o RH vê todos, com filtro por setor. Detalhe mensal por funcionário
+- O login volta para a página de origem (`?next`), necessário para o link do QR code
+- Auditoria das alterações de configuração de ponto, locais e QR code
+
+### Corrigido
+
+- Formulários enviados antes de a página carregar o JavaScript não colocam mais os campos na URL
+  (no login, isso expunha a senha)
+
 ### Adicionado — Fase 1 (base)
 
 - Projeto Next.js 16 + TypeScript + Tailwind CSS 4 + shadcn/ui, com o nome **Pontual**

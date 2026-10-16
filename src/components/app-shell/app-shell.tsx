@@ -5,12 +5,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   Building2Icon,
+  ClockIcon,
   HomeIcon,
   LogOutIcon,
   MenuIcon,
   ScrollTextIcon,
   SettingsIcon,
   UsersIcon,
+  UsersRoundIcon,
 } from "lucide-react";
 import { PontualLogo } from "@/components/brand/pontual-logo";
 import { Button } from "@/components/ui/button";
@@ -21,6 +23,8 @@ import type { NavItem } from "./nav";
 
 const ICONS = {
   home: HomeIcon,
+  clock: ClockIcon,
+  team: UsersRoundIcon,
   users: UsersIcon,
   departments: Building2Icon,
   settings: SettingsIcon,

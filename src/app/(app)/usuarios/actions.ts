@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { fieldErrorsFrom, type ActionState } from "@/lib/action-state";
-import { userSchema } from "@/lib/validation";
+import { requiresDepartment } from "@/lib/permissions";
+import { userPunchOverridesSchema, userSchema } from "@/lib/validation";
 import { requirePermission } from "@/server/auth/session";
 import { toActionState } from "@/server/errors";
 import { createUser, resendInvite, updateUser } from "@/server/users";
@@ -20,11 +21,22 @@ export async function saveUser(id: string | null, _prev: ActionState, formData: 
   });
   if (!parsed.success) return { ok: false, fieldErrors: fieldErrorsFrom(parsed.error) };
 
+  // Exceções das validações de ponto. O Administrador não bate ponto: sempre segue o padrão.
+  const field = (name: string) => (requiresDepartment(parsed.data.role) ? formData.get(name) ?? undefined : undefined);
+  const overrides = userPunchOverridesSchema.safeParse({
+    punchRequireGeolocation: field("punchRequireGeolocation"),
+    punchRequireGeofence: field("punchRequireGeofence"),
+    punchRequireSelfie: field("punchRequireSelfie"),
+    punchRequireQrCode: field("punchRequireQrCode"),
+  });
+  if (!overrides.success) return { ok: false, fieldErrors: fieldErrorsFrom(overrides.error) };
+  const data = { ...parsed.data, ...overrides.data };
+
   try {
     if (id) {
-      await updateUser(actor, id, parsed.data);
+      await updateUser(actor, id, data);
     } else {
-      await createUser(actor, parsed.data);
+      await createUser(actor, data);
     }
   } catch (error) {
     return toActionState(error);

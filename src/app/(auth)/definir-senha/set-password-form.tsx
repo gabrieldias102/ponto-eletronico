@@ -70,7 +70,7 @@ export function SetPasswordForm({ token, isInvite, invalid }: Props) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={onSubmit} className="flex flex-col gap-4">
+        <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4">
           {error ? (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>

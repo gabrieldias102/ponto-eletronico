@@ -16,7 +16,7 @@ function errorMessage(code?: string, message?: string) {
   return "Não foi possível entrar. Tente novamente.";
 }
 
-export function LoginForm() {
+export function LoginForm({ next }: { next: string }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -37,7 +37,7 @@ export function LoginForm() {
       setPending(false);
       return;
     }
-    router.push("/inicio");
+    router.push(next);
     router.refresh();
   }
 
@@ -48,7 +48,7 @@ export function LoginForm() {
         <CardDescription>Use o e-mail e a senha cadastrados pela sua empresa.</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={onSubmit} className="flex flex-col gap-4">
+        <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4">
           {error ? (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
