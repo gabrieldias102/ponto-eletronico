@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: pontual-db
+    environment:
+      POSTGRES_USER: pontual
+      POSTGRES_PASSWORD: pontual
+      POSTGRES_DB: pontual
+      TZ: UTC
+    ports:
+      - "5433:5432"
+    volumes:
+      - pontual-db:/var/lib/postgresql/data
+
+volumes:
+  pontual-db:

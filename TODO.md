@@ -4,7 +4,7 @@ Itens planejados que **não** fazem parte do escopo atual. Ao concluir um item, 
 
 ## Fases
 
-- [ ] **Fase 1 — Base**: setup, autenticação, perfis, setores, cadastro de usuários, configurações, identidade visual
+- [x] **Fase 1 — Base**: setup, autenticação, perfis, setores, cadastro de usuários, configurações, identidade visual (branch `feat/fase-1-base`)
 - [ ] **Fase 2 — Ponto**: batidas com NSR, aviso fora do horário, validações configuráveis
 - [ ] **Fase 3 — Jornadas**: escalas, feriados, tolerância
 - [ ] **Fase 4 — Ajustes**: solicitação, aprovação em duas etapas, notificações
@@ -49,6 +49,15 @@ Itens planejados que **não** fazem parte do escopo atual. Ao concluir um item, 
 
 ## Decisões pendentes
 
-- [ ] Nome, logo e favicon do aplicativo
+- [x] Nome, logo e favicon do aplicativo: **Pontual**
 - [ ] Autoaprovação: quem aprova o ajuste de um gestor do próprio setor, ou de alguém do RH
 - [ ] Política de retenção de selfies e anexos (LGPD)
+
+## Melhorias levantadas na Fase 1
+
+- [ ] Ícones PNG do PWA (192/512 px e `apple-icon` para iOS); hoje só há o `icon.svg`
+- [ ] Testes E2E (Playwright) dos fluxos de login, convite e cadastro
+- [ ] Apagar do Blob o logo antigo ao trocar ou remover o logo
+- [ ] Ao definir a senha com outra sessão aberta no navegador, encerrar essa sessão antes de ir para o login
+- [ ] Revisar limites de tentativa de login (rate limit do Better Auth) para produção
+- [ ] Modo escuro (os tokens já existem no `globals.css`)
