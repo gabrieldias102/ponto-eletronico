@@ -103,3 +103,72 @@ export const allowedLocationSchema = z.object({
 });
 
 export type AllowedLocationInput = z.infer<typeof allowedLocationSchema>;
+
+/** Término <= início atravessa a meia-noite; início = término é um turno de 24h. */
+const periodSchema = z.object({ start: timeOfDay, end: timeOfDay });
+
+/** Períodos de um dia: no máximo 4, em ordem, sem sobreposição; só o último pode virar a meia-noite. */
+const dayPeriodsSchema = z
+  .array(periodSchema)
+  .max(4, "No máximo 4 períodos por dia (8 marcações).")
+  .superRefine((periods, ctx) => {
+    const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
+    let previousEnd = -1;
+    periods.forEach((p, i) => {
+      const start = toMin(p.start);
+      let end = toMin(p.end);
+      const crosses = end <= start;
+      if (crosses) end += 24 * 60;
+      if (crosses && i !== periods.length - 1) {
+        ctx.addIssue({ code: "custom", message: "Só o último período do dia pode terminar após a meia-noite." });
+      }
+      if (start < previousEnd) {
+        ctx.addIssue({ code: "custom", message: "Os períodos devem estar em ordem e sem sobreposição." });
+      }
+      previousEnd = end;
+    });
+  });
+
+const weekdayKey = z.enum(["0", "1", "2", "3", "4", "5", "6"]);
+
+export const scheduleSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("WEEKLY"),
+    name: z.string().trim().min(2, "Informe o nome da jornada.").max(80),
+    description: optionalText,
+    worksOnHolidays: z.boolean(),
+    days: z
+      .partialRecord(weekdayKey, dayPeriodsSchema)
+      .refine((d) => Object.values(d).some((p) => (p?.length ?? 0) > 0), "Defina ao menos um dia de trabalho."),
+  }),
+  z.object({
+    type: z.literal("CYCLE"),
+    name: z.string().trim().min(2, "Informe o nome da jornada.").max(80),
+    description: optionalText,
+    worksOnHolidays: z.boolean(),
+    cycleStartDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Informe a data de início do ciclo."),
+    days: z
+      .array(dayPeriodsSchema)
+      .min(1, "O ciclo precisa de ao menos 1 dia.")
+      .max(28, "O ciclo pode ter no máximo 28 dias.")
+      .refine((d) => d.some((p) => p.length > 0), "Defina ao menos um dia de trabalho."),
+  }),
+]);
+
+export type ScheduleInput = z.infer<typeof scheduleSchema>;
+
+export const holidaySchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Informe a data."),
+  name: z.string().trim().min(2, "Informe o nome do feriado.").max(80),
+  scope: z.enum(["NATIONAL", "STATE", "MUNICIPAL"]),
+});
+
+export type HolidayInput = z.infer<typeof holidaySchema>;
+
+export const toleranceSchema = z.object({
+  tolerancePerPunchMinutes: z.coerce.number().int().min(0, "Mínimo 0.").max(60, "Máximo 60 min."),
+  toleranceDailyMinutes: z.coerce.number().int().min(0, "Mínimo 0.").max(120, "Máximo 120 min."),
+  scheduleWarningMarginMinutes: z.coerce.number().int().min(0, "Mínimo 0.").max(240, "Máximo 240 min."),
+});
+
+export type ToleranceInput = z.infer<typeof toleranceSchema>;

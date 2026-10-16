@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   Building2Icon,
+  CalendarClockIcon,
   ClockIcon,
   HomeIcon,
   LogOutIcon,
@@ -27,6 +28,7 @@ const ICONS = {
   team: UsersRoundIcon,
   users: UsersIcon,
   departments: Building2Icon,
+  schedules: CalendarClockIcon,
   settings: SettingsIcon,
   audit: ScrollTextIcon,
 } as const;

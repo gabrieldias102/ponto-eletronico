@@ -26,7 +26,8 @@ type Props = {
   requirements: PunchRequirements;
   qrToken: string | null;
   limitReached: boolean;
-  businessHours: string;
+  /** Referência do aviso: a jornada do funcionário ou, sem jornada, o horário comercial. */
+  hours: { kind: "schedule" | "business"; text: string };
 };
 
 function Clock() {
@@ -53,7 +54,8 @@ function Requirement({ ok, icon: Icon, children }: { ok: boolean; icon: typeof M
   );
 }
 
-export function PunchPanel({ requirements, qrToken, limitReached, businessHours }: Props) {
+export function PunchPanel({ requirements, qrToken, limitReached, hours }: Props) {
+  const hoursLabel = hours.kind === "schedule" ? "Sua jornada hoje" : "Horário comercial";
   const router = useRouter();
   const pathname = usePathname();
   const { videoRef, state: cameraState, start: startCamera, capture } = useCamera(requirements.selfie);
@@ -179,15 +181,16 @@ export function PunchPanel({ requirements, qrToken, limitReached, businessHours 
       </Button>
 
       <p className="text-xs text-muted-foreground">
-        O horário registrado é o do servidor, não o do seu aparelho. Horário comercial: {businessHours}.
+        O horário registrado é o do servidor, não o do seu aparelho. {hoursLabel}: {hours.text}.
       </p>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Fora do horário comercial</AlertDialogTitle>
+            <AlertDialogTitle>{hours.kind === "schedule" ? "Fora da sua jornada" : "Fora do horário comercial"}</AlertDialogTitle>
             <AlertDialogDescription>
-              Você está batendo o ponto fora do horário comercial ({businessHours}). Deseja continuar?
+              Você está batendo o ponto fora {hours.kind === "schedule" ? "da sua jornada" : "do horário comercial"} (
+              {hours.text}). Deseja continuar?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

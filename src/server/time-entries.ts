@@ -15,6 +15,8 @@ import type { CurrentUser } from "@/server/auth/session";
 import { db } from "@/server/db";
 import { DomainError } from "@/server/errors";
 import { getOrganization, ORGANIZATION_ID } from "@/server/organization";
+import { scheduleWindow } from "@/server/schedules";
+import { isWithinSchedule } from "@/lib/schedule";
 import { uploadPrivateFile } from "@/server/storage";
 
 export const SELFIE_MAX_BYTES = 2 * 1024 * 1024;
@@ -121,11 +123,15 @@ export async function registerPunch(user: CurrentUser, input: PunchInput): Promi
     if (input.selfie.size > SELFIE_MAX_BYTES) throw new DomainError("A selfie ficou grande demais. Tente novamente.");
   }
 
-  const outsideBusinessHours = !isWithinBusinessHours(now, {
-    start: organization.businessHoursStart,
-    end: organization.businessHoursEnd,
-    days: organization.businessDays,
-  });
+  // Com jornada atribuída, vale a jornada (com margem); sem jornada, o horário comercial da empresa.
+  const window = await scheduleWindow(user.id, now);
+  const outsideBusinessHours = window.hasSchedule
+    ? !isWithinSchedule(now, window.intervals, organization.scheduleWarningMarginMinutes)
+    : !isWithinBusinessHours(now, {
+        start: organization.businessHoursStart,
+        end: organization.businessHoursEnd,
+        days: organization.businessDays,
+      });
   if (outsideBusinessHours && !input.confirmOutsideHours) return { status: "needs-confirmation" };
 
   // Upload antes da transação para não segurar a trava do NSR durante a rede.

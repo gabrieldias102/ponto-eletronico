@@ -5,6 +5,11 @@ import { assignableRoles, canManageUser, ROLE_LABELS } from "@/lib/permissions";
 import { requirePermission } from "@/server/auth/session";
 import { departmentOptions } from "@/server/departments";
 import { getOrganization } from "@/server/organization";
+import { listAssignments, scheduleOptions } from "@/server/schedules";
+import { assignmentForDay } from "@/lib/schedule";
+import { dateKey } from "@/lib/time";
+import { requiresDepartment } from "@/lib/permissions";
+import { ScheduleAssignment } from "./schedule-assignment";
 import { getUser } from "@/server/users";
 import { UserForm } from "../user-form";
 
@@ -13,7 +18,14 @@ export const metadata: Metadata = { title: "Editar usuário" };
 export default async function EditUserPage({ params }: { params: Promise<{ id: string }> }) {
   const actor = await requirePermission("users:manage");
   const { id } = await params;
-  const [user, departments, organization] = await Promise.all([getUser(id), departmentOptions(), getOrganization()]);
+  const [user, departments, organization, assignments, schedules] = await Promise.all([
+    getUser(id),
+    departmentOptions(),
+    getOrganization(),
+    listAssignments(id),
+    scheduleOptions(),
+  ]);
+  const today = dateKey(new Date());
   if (!user) notFound();
 
   if (!canManageUser(actor.role, user.role)) {
@@ -35,6 +47,15 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
         departments={departments}
         isSelf={user.id === actor.id}
       />
+      {requiresDepartment(user.role) ? (
+        <ScheduleAssignment
+          userId={user.id}
+          assignments={assignments}
+          currentId={assignmentForDay(assignments, today)?.id ?? null}
+          options={schedules}
+          today={today}
+        />
+      ) : null}
     </>
   );
 }

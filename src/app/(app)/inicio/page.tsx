@@ -42,8 +42,15 @@ export default async function HomePage() {
                   Hoje: {today.length} de {MAX_PUNCHES_PER_DAY} marcações
                 </CardDescription>
               </CardHeader>
-              <CardContent className="text-3xl font-semibold tabular-nums">
-                {today.length > 0 ? `Última às ${formatShortTime(today.at(-1)!.punchedAt)}` : "Nenhuma ainda"}
+              <CardContent>
+                {today.length > 0 ? (
+                  <>
+                    <span className="text-3xl font-semibold tabular-nums">{formatShortTime(today.at(-1)!.punchedAt)}</span>
+                    <span className="ml-2 text-sm text-muted-foreground">última marcação</span>
+                  </>
+                ) : (
+                  <span className="text-sm text-muted-foreground">Nenhuma marcação hoje</span>
+                )}
               </CardContent>
             </Card>
           </Link>

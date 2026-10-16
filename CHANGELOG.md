@@ -5,6 +5,23 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ## [Não lançado]
 
+### Adicionado — Fase 3 (jornadas)
+
+- Menu **Jornadas** (Administrador) com as abas Jornadas, Feriados e Tolerância
+- Jornadas **semanais** (até 4 períodos por dia, com "copiar segunda para terça a sexta") e **escalas em ciclo**
+  (atalhos para 12x36 diurno/noturno, 24x48 e 6x1), com turno noturno e carga semanal calculada
+- Jornada em uso tem os horários bloqueados; botão **Duplicar** para criar uma nova versão
+- **Histórico de jornadas** no cadastro do funcionário, com atribuição a partir de uma data (Admin e RH)
+- **Feriados** por ano, com importação dos feriados nacionais (e, opcionalmente, Carnaval e Corpus Christi)
+- **Tolerância** por marcação e por dia (padrão CLT: 5 e 10 min) e margem do aviso de batida fora da jornada
+- A tela de registro mostra a jornada do dia (ou folga/feriado), e o aviso passa a considerar a jornada do
+  funcionário, inclusive turno noturno; sem jornada, continua valendo o horário comercial
+
+### Alterado
+
+- Abas de navegação reaproveitáveis (Configurações e Jornadas)
+- Cartão "Registrar ponto" do Início mostra a última marcação sem quebrar a linha
+
 ### Adicionado — Fase 2 (registro de ponto)
 
 - Tela **Registrar ponto** com relógio, botão de registro e marcações do dia (até 8 por dia)

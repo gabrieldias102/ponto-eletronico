@@ -3,6 +3,7 @@ import {
   allowedLocationSchema,
   organizationSchema,
   punchSettingsSchema,
+  scheduleSchema,
   userPunchOverridesSchema,
   userSchema,
 } from "./validation";
@@ -106,5 +107,46 @@ describe("allowedLocationSchema", () => {
 
   it("limita o raio", () => {
     expect(allowedLocationSchema.safeParse({ name: "Sede", latitude: 0, longitude: 0, radiusMeters: 5 }).success).toBe(false);
+  });
+});
+
+describe("scheduleSchema", () => {
+  const weekly = (days: Record<string, { start: string; end: string }[]>) => ({
+    type: "WEEKLY",
+    name: "Comercial",
+    description: "",
+    worksOnHolidays: false,
+    days,
+  });
+
+  it("aceita jornada comercial", () => {
+    const r = scheduleSchema.safeParse(
+      weekly({ "1": [{ start: "08:00", end: "12:00" }, { start: "13:00", end: "17:00" }] }),
+    );
+    expect(r.success).toBe(true);
+  });
+
+  it("recusa períodos sobrepostos ou fora de ordem", () => {
+    const r = scheduleSchema.safeParse(
+      weekly({ "1": [{ start: "08:00", end: "12:00" }, { start: "11:00", end: "17:00" }] }),
+    );
+    expect(r.success).toBe(false);
+  });
+
+  it("só o último período pode virar a meia-noite", () => {
+    expect(scheduleSchema.safeParse(weekly({ "1": [{ start: "18:00", end: "22:00" }, { start: "23:00", end: "03:00" }] })).success).toBe(true);
+    expect(scheduleSchema.safeParse(weekly({ "1": [{ start: "22:00", end: "02:00" }, { start: "03:00", end: "06:00" }] })).success).toBe(false);
+  });
+
+  it("limita a 4 períodos e exige um dia de trabalho", () => {
+    const five = Array.from({ length: 5 }, (_, i) => ({ start: `0${i}:00`, end: `0${i}:30` }));
+    expect(scheduleSchema.safeParse(weekly({ "1": five })).success).toBe(false);
+    expect(scheduleSchema.safeParse(weekly({ "1": [] })).success).toBe(false);
+  });
+
+  it("ciclo exige data de início", () => {
+    const base = { type: "CYCLE", name: "12x36", description: "", worksOnHolidays: true, days: [[{ start: "07:00", end: "19:00" }], []] };
+    expect(scheduleSchema.safeParse({ ...base, cycleStartDate: "2026-10-01" }).success).toBe(true);
+    expect(scheduleSchema.safeParse({ ...base, cycleStartDate: "" }).success).toBe(false);
   });
 });

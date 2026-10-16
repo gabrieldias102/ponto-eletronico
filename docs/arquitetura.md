@@ -65,6 +65,27 @@
 - **Formulários com `method="post"`.** Formulários enviados por JavaScript declaram `method="post"`: se
   o usuário enviar antes da hidratação, os campos (inclusive a senha no login) não vão para a URL.
 
+### 1.3 Decisões da Fase 3 (jornadas)
+
+- **Jornada é um modelo reutilizável** (`WorkSchedule`): `WEEKLY` (períodos por dia da semana) ou
+  `CYCLE` (N dias contados a partir de `cycleStartDate`, ex.: 12x36). Os períodos ficam em JSON validado
+  por Zod (`scheduleSchema`): até 4 por dia, em ordem, sem sobreposição; término <= início atravessa a
+  meia-noite (só o último período do dia); início = término é um turno de 24h.
+- **Histórico de jornadas** (`ScheduleAssignment`): vale a atribuição com a maior data de início <= dia.
+  Atribuições que já começaram não podem ser removidas (só as agendadas).
+- **Jornada em uso não muda de horário.** Alterar períodos mudaria a carga prevista de dias passados.
+  Para mudar, o admin duplica a jornada e atribui a nova versão a partir de uma data.
+- **Feriados valem para a empresa toda** (uma organização, sem filiais). São folga, exceto nas jornadas
+  com `worksOnHolidays`. A importação calcula os feriados nacionais do ano (Páscoa pelo algoritmo de
+  Meeus) e, opcionalmente, Carnaval e Corpus Christi.
+- **Aviso de batida fora do horário** usa a jornada do dia (e a de ontem, para o turno noturno) com a
+  margem `scheduleWarningMarginMinutes`; sem jornada atribuída, usa o horário comercial. O campo
+  `outsideBusinessHours` da marcação significa "fora do horário previsto" nos dois casos.
+- **Tolerância** (`tolerancePerPunchMinutes`, `toleranceDailyMinutes`) fica na organização, com o padrão da
+  CLT (5 e 10 min). Ela é usada pelo cálculo de horas (Fase 5).
+- **Quem atribui jornada:** Admin e RH (quem cadastra funcionários). Criar e editar jornadas, feriados e
+  tolerância é só do Admin (`schedules:manage`).
+
 ## 2. Convenções
 
 - **Código** (variáveis, funções, tabelas, rotas de API) em **inglês**.
@@ -97,6 +118,9 @@ User               nome, e-mail, perfil (ADMIN | HR | MANAGER | EMPLOYEE), setor
                    exceções das validações da batida
 Department         nome, gestor (User com perfil MANAGER)
 AllowedLocation    local permitido da cerca virtual: nome, lat, lng, raio, ativo
+WorkSchedule       jornada: tipo (semanal | ciclo), períodos (JSON), início do ciclo, trabalha em feriados
+ScheduleAssignment histórico de jornadas do funcionário: jornada, data de início
+Holiday            feriado: data, nome, abrangência (nacional, estadual, municipal)
 TimeEntry          marcação imutável: NSR, usuário, horário, localização, local, selfie, QR,
                    fora do horário, IP, user agent
 NsrCounter         contador do NSR (linha única)
@@ -107,8 +131,6 @@ Session, Account, Verification   tabelas do Better Auth
 Planejado para as próximas fases:
 
 ```
-WorkSchedule       jornada: tipo (semanal, 12x36, ...), regras por dia
-Holiday            data, nome, abrangência (nacional, estadual, municipal)
 AdjustmentRequest  tipo, datas/horários, justificativa, anexo, status, etapa, referência à anterior
 AdjustmentReview   etapa (gestor | RH), revisor, decisão, comentário, data
 Notification       usuário, tipo, conteúdo, lida
@@ -121,7 +143,7 @@ prisma/               schema, migrations e seed
 src/
   app/
     (auth)/           login, esqueci-senha, definir-senha
-    (app)/            telas autenticadas: inicio, ponto, equipe, usuarios, setores, configuracoes, auditoria
+    (app)/            telas autenticadas: inicio, ponto, equipe, usuarios, setores, jornadas, configuracoes, auditoria
     painel-qr/        painel público do QR code (tablet/monitor na empresa)
     api/auth/         endpoint do Better Auth
     api/marcacoes/    selfie das marcações (com checagem de permissão)
@@ -132,7 +154,7 @@ src/
     timesheet/        marcações agrupadas por dia e navegação por mês
   generated/prisma/   cliente gerado pelo Prisma (não versionado)
   lib/                código compartilhado e testável: permissões, validação, cores, fuso horário,
-                      regras da batida (cerca virtual, horário comercial), token do QR
+                      regras da batida (cerca virtual, horário comercial), token do QR, jornadas, feriados
   server/             regras de negócio e acesso a dados (somente servidor)
     auth/             configuração do Better Auth e helpers de sessão
   proxy.ts            redirecionamento otimista para o login
