@@ -71,7 +71,10 @@ controle de jornada, solicitação e aprovação de ajustes, e conformidade com 
 ### 5.2 Fora do horário
 
 - Bater ponto fora do horário previsto na jornada é **permitido**, mas o sistema exibe um aviso de
-  confirmação (ex.: _"Você está batendo o ponto fora do seu horário de trabalho. Deseja continuar?"_).
+  confirmação (ex.: _"Você está batendo o ponto fora do horário comercial. Deseja continuar?"_).
+- Até as jornadas individuais existirem (Fase 3), a referência é o **horário comercial da empresa**
+  (início, término e dias úteis), configurado pelo Administrador.
+- A marcação fica sinalizada como "fora do horário".
 
 ### 5.3 Validações configuráveis
 
@@ -82,8 +85,8 @@ organização e pode ser **sobrescrita por funcionário** (ex.: quem trabalha re
 |---|---|
 | **Geolocalização — registro** | Captura e armazena a localização no momento da batida. |
 | **Geolocalização — cerca virtual** | Só aceita a batida dentro do raio de um dos **locais permitidos** cadastrados (podem existir vários). |
-| **Selfie** | Captura e armazena uma foto no momento da batida. Sem reconhecimento facial. |
-| **QR code** | QR exibido na empresa (tela ou impresso). O funcionário escaneia para comprovar presença. |
+| **Selfie** | Foto tirada na hora pela câmera frontal (não aceita galeria). Armazenada de forma privada: só o funcionário, o gestor do setor e o RH veem. Sem reconhecimento facial. |
+| **QR code** | QR exibido em um painel na empresa (tablet ou monitor), que muda a cada minuto. O funcionário escaneia com a câmera do celular e é levado à tela de registro. |
 
 ## 6. Ajustes
 

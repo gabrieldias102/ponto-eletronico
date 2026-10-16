@@ -25,7 +25,7 @@ export function DepartmentForm({ department, managers }: Props) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex max-w-xl flex-col gap-5">
+    <form method="post" onSubmit={onSubmit} className="flex max-w-xl flex-col gap-5">
       <Field label="Nome do setor" htmlFor="name" error={errors.name}>
         <Input id="name" name="name" defaultValue={department?.name} required aria-invalid={!!errors.name} />
       </Field>

@@ -5,7 +5,7 @@ Itens planejados que **não** fazem parte do escopo atual. Ao concluir um item, 
 ## Fases
 
 - [x] **Fase 1 — Base**: setup, autenticação, perfis, setores, cadastro de usuários, configurações, identidade visual (branch `feat/fase-1-base`)
-- [ ] **Fase 2 — Ponto**: batidas com NSR, aviso fora do horário, validações configuráveis
+- [x] **Fase 2 — Ponto**: batidas com NSR, aviso fora do horário, validações configuráveis (branch `feat/fase-2-ponto`)
 - [ ] **Fase 3 — Jornadas**: escalas, feriados, tolerância
 - [ ] **Fase 4 — Ajustes**: solicitação, aprovação em duas etapas, notificações
 - [ ] **Fase 5 — Cálculos** (ver abaixo)
@@ -52,6 +52,15 @@ Itens planejados que **não** fazem parte do escopo atual. Ao concluir um item, 
 - [x] Nome, logo e favicon do aplicativo: **Pontual**
 - [ ] Autoaprovação: quem aprova o ajuste de um gestor do próprio setor, ou de alguém do RH
 - [ ] Política de retenção de selfies e anexos (LGPD)
+
+## Melhorias levantadas na Fase 2
+
+- [ ] Testes de integração com banco (NSR concorrente, limite diário, escopo da equipe, trigger de imutabilidade)
+- [ ] Política de retenção e exclusão de selfies (LGPD); depende de definição jurídica
+- [ ] Opção de QR code impresso (estático) para locais sem tela, com a ressalva de segurança
+- [ ] Localização simulada (mock location) não é detectável no navegador; avaliar app nativo se necessário
+- [ ] Ao trocar o horário comercial pelas jornadas (Fase 3), preservar o `outsideBusinessHours` das marcações antigas
+- [ ] Comprovante de cada marcação (Portaria 671, Fase 7)
 
 ## Melhorias levantadas na Fase 1
 

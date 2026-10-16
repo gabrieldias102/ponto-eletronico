@@ -16,15 +16,81 @@ enum Role {
 
 /// Configuração única da organização (registro com id "default").
 model Organization {
-  id           String   @id @default("default")
+  id           String  @id @default("default")
   name         String
   legalName    String?
   taxId        String? /// CNPJ ou CPF do empregador
   logoUrl      String?
-  primaryColor String   @default("#0d9488")
-  updatedAt    DateTime @updatedAt
+  primaryColor String  @default("#0d9488")
+
+  // Validações exigidas na batida (padrão da empresa; cada usuário pode sobrescrever)
+  punchRequireGeolocation Boolean @default(false)
+  punchRequireGeofence    Boolean @default(false)
+  punchRequireSelfie      Boolean @default(false)
+  punchRequireQrCode      Boolean @default(false)
+
+  /// Horário comercial usado no aviso de batida fora do horário até existirem jornadas (Fase 3).
+  businessHoursStart String @default("08:00")
+  businessHoursEnd   String @default("18:00")
+  /// Dias úteis: 0 = domingo ... 6 = sábado
+  businessDays       Int[]  @default([1, 2, 3, 4, 5])
+
+  /// Segredo do QR code rotativo do painel. Trocar invalida o painel atual.
+  qrSecret String?
+
+  updatedAt DateTime @updatedAt
 
   @@map("organization")
+}
+
+/// Local permitido para a cerca virtual.
+model AllowedLocation {
+  id           String      @id @default(cuid())
+  name         String
+  latitude     Float
+  longitude    Float
+  radiusMeters Int
+  active       Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  timeEntries  TimeEntry[]
+
+  @@map("allowed_locations")
+}
+
+/// Marcação de ponto. Imutável: um trigger no banco bloqueia UPDATE e DELETE.
+model TimeEntry {
+  id                   String           @id @default(cuid())
+  /// Número Sequencial de Registro (Portaria 671), sem lacunas.
+  nsr                  BigInt           @unique
+  userId               String
+  user                 User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  /// Hora do servidor no momento da batida.
+  punchedAt            DateTime         @db.Timestamptz(3)
+  latitude             Float?
+  longitude            Float?
+  accuracyMeters       Float?
+  allowedLocationId    String?
+  allowedLocation      AllowedLocation? @relation(fields: [allowedLocationId], references: [id], onDelete: Restrict)
+  /// Chave do arquivo privado da selfie.
+  selfieKey            String?
+  qrVerified           Boolean          @default(false)
+  outsideBusinessHours Boolean          @default(false)
+  ip                   String?
+  userAgent            String?
+  createdAt            DateTime         @default(now()) @db.Timestamptz(3)
+
+  @@index([userId, punchedAt])
+  @@index([punchedAt])
+  @@map("time_entries")
+}
+
+/// Contador do NSR. Linha única travada na transação de cada batida.
+model NsrCounter {
+  id    Int    @id @default(1)
+  value BigInt @default(0)
+
+  @@map("nsr_counter")
 }
 
 model Department {
@@ -40,22 +106,30 @@ model Department {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String      @id @default(cuid())
   name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
+  email         String      @unique
+  emailVerified Boolean     @default(false)
   image         String?
-  role          Role      @default(EMPLOYEE)
-  active        Boolean   @default(true)
+  role          Role        @default(EMPLOYEE)
+  active        Boolean     @default(true)
   departmentId  String?
   department    Department? @relation("DepartmentMembers", fields: [departmentId], references: [id], onDelete: SetNull)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+
+  // Sobrescrevem as validações da empresa. null = segue o padrão da empresa.
+  punchRequireGeolocation Boolean?
+  punchRequireGeofence    Boolean?
+  punchRequireSelfie      Boolean?
+  punchRequireQrCode      Boolean?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   managedDepartments Department[] @relation("DepartmentManager")
   sessions           Session[]
   accounts           Account[]
   auditLogs          AuditLog[]
+  timeEntries        TimeEntry[]
 
   @@index([departmentId])
   @@map("users")

@@ -55,3 +55,51 @@ export type OrganizationInput = z.infer<typeof organizationSchema>;
 
 export const LOGO_MAX_BYTES = 1024 * 1024;
 export const LOGO_TYPES = ["image/png", "image/jpeg", "image/webp"];
+
+/** Valor de sobrescrita por usuário: "default" segue a empresa. */
+const triState = z
+  .enum(["default", "yes", "no"])
+  .default("default")
+  .transform((v) => (v === "default" ? null : v === "yes"));
+
+export const userPunchOverridesSchema = z.object({
+  punchRequireGeolocation: triState,
+  punchRequireGeofence: triState,
+  punchRequireSelfie: triState,
+  punchRequireQrCode: triState,
+});
+
+export type UserPunchOverrides = z.infer<typeof userPunchOverridesSchema>;
+
+const timeOfDay = z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Use o formato HH:mm.");
+
+export const punchSettingsSchema = z
+  .object({
+    punchRequireGeolocation: z.boolean(),
+    punchRequireGeofence: z.boolean(),
+    punchRequireSelfie: z.boolean(),
+    punchRequireQrCode: z.boolean(),
+    businessHoursStart: timeOfDay,
+    businessHoursEnd: timeOfDay,
+    businessDays: z.array(z.number().int().min(0).max(6)).min(1, "Selecione ao menos um dia."),
+  })
+  .refine((d) => d.businessHoursEnd > d.businessHoursStart, {
+    path: ["businessHoursEnd"],
+    message: "O término deve ser depois do início.",
+  })
+  .transform((d) => ({ ...d, businessDays: [...new Set(d.businessDays)].sort() }));
+
+export type PunchSettingsInput = z.infer<typeof punchSettingsSchema>;
+
+export const allowedLocationSchema = z.object({
+  name: z.string().trim().min(2, "Informe o nome do local.").max(80),
+  latitude: z.coerce.number("Latitude inválida.").min(-90, "Latitude inválida.").max(90, "Latitude inválida."),
+  longitude: z.coerce.number("Longitude inválida.").min(-180, "Longitude inválida.").max(180, "Longitude inválida."),
+  radiusMeters: z.coerce
+    .number("Informe o raio.")
+    .int("Use um número inteiro.")
+    .min(20, "O raio mínimo é 20 m.")
+    .max(5000, "O raio máximo é 5.000 m."),
+});
+
+export type AllowedLocationInput = z.infer<typeof allowedLocationSchema>;

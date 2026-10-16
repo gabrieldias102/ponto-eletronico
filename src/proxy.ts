@@ -1,19 +1,21 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
-const PUBLIC_PATHS = ["/login", "/esqueci-senha", "/definir-senha"];
+const PUBLIC_PATHS = ["/login", "/esqueci-senha", "/definir-senha", "/painel-qr"];
 
 /**
- * Verificação otimista: sem cookie de sessão, manda para o login.
- * A autorização de verdade acontece no servidor (requireUser / requirePermission).
+ * Verificação otimista: sem cookie de sessão, manda para o login guardando o destino em ?next
+ * (ex.: o link do QR code do painel). A autorização de verdade acontece no servidor.
  */
 export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
   const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   const hasSession = Boolean(getSessionCookie(request));
 
   if (!isPublic && !hasSession) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    const login = new URL("/login", request.url);
+    if (pathname !== "/") login.searchParams.set("next", pathname + search);
+    return NextResponse.redirect(login);
   }
   if (pathname === "/login" && hasSession) {
     return NextResponse.redirect(new URL("/inicio", request.url));

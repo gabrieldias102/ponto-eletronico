@@ -39,6 +39,32 @@
   é calculado pelo contraste WCAG (`src/lib/color.ts`).
 - **Logo só em PNG, JPG ou WebP** (até 1 MB). SVG ficou de fora porque pode conter scripts.
 
+### 1.2 Decisões da Fase 2 (registro de ponto)
+
+- **NSR sem lacunas.** Em vez de uma `SEQUENCE` (que pula números quando uma transação falha), o NSR vem
+  da tabela `nsr_counter` (linha única). Cada batida faz `UPDATE ... RETURNING` nessa linha dentro da
+  transação: a trava serializa as batidas e o rollback desfaz o incremento.
+- **Marcações imutáveis no banco.** Triggers em `time_entries` recusam `UPDATE`, `DELETE` e `TRUNCATE`
+  (migration `marcacoes_imutaveis`). A relação com usuário é `onDelete: Restrict`.
+- **Hora do servidor.** `punchedAt` é `new Date()` no servidor, gravado como `timestamptz`. "Hoje",
+  dia da semana e horário comercial são calculados em `America/Sao_Paulo` (`src/lib/time.ts`).
+- **Horário comercial provisório.** Até as jornadas individuais (Fase 3), o aviso de "fora do horário" usa o
+  horário comercial da empresa (`businessHoursStart/End`, `businessDays`). O servidor responde
+  `needs-confirmation` e o cliente reenvia com a confirmação.
+- **Exigências por usuário.** Os campos `punchRequire*` do usuário são `null` (segue a empresa) ou
+  `true/false`. A cerca virtual implica geolocalização (`resolveRequirements`).
+- **QR code rotativo.** O painel (`/painel-qr?chave=…`, público) mostra um QR com
+  `/ponto?qr=<token>`. O token é um HMAC do segredo da empresa sobre janelas de 60 s, e o servidor aceita a
+  janela atual e as duas anteriores. A chave do painel também é derivada do segredo; "gerar novo link"
+  troca o segredo e invalida o painel. O login preserva o destino em `?next` (validado por `safeNext`).
+- **Selfie privada.** Capturada ao vivo com `getUserMedia` (sem galeria), JPEG de até 640 px. Gravada no
+  Vercel Blob com `access: "private"` (local: `storage/private`, fora de `public/`). Só é servida por
+  `/api/marcacoes/[id]/selfie`, que confere a permissão e responde com `no-store`.
+- **Escopo da equipe.** `teamScope` (`src/server/team.ts`): RH e Admin veem todos; o gestor vê os setores
+  que gerencia. Fora do escopo, as páginas respondem 404.
+- **Formulários com `method="post"`.** Formulários enviados por JavaScript declaram `method="post"`: se
+  o usuário enviar antes da hidratação, os campos (inclusive a senha no login) não vão para a URL.
+
 ## 2. Convenções
 
 - **Código** (variáveis, funções, tabelas, rotas de API) em **inglês**.
@@ -62,12 +88,18 @@
 
 ## 4. Modelo de dados
 
-Implementado na Fase 1 (`prisma/schema.prisma`):
+Implementado (`prisma/schema.prisma`):
 
 ```
-Organization       registro único: nome, razão social, CNPJ/CPF, logo, cor principal
-User               nome, e-mail, perfil (ADMIN | HR | MANAGER | EMPLOYEE), setor, ativo
+Organization       registro único: nome, razão social, CNPJ/CPF, logo, cor principal,
+                   validações padrão da batida, horário comercial, segredo do QR
+User               nome, e-mail, perfil (ADMIN | HR | MANAGER | EMPLOYEE), setor, ativo,
+                   exceções das validações da batida
 Department         nome, gestor (User com perfil MANAGER)
+AllowedLocation    local permitido da cerca virtual: nome, lat, lng, raio, ativo
+TimeEntry          marcação imutável: NSR, usuário, horário, localização, local, selfie, QR,
+                   fora do horário, IP, user agent
+NsrCounter         contador do NSR (linha única)
 AuditLog           autor, ação, entidade, antes/depois, IP, user agent, data
 Session, Account, Verification   tabelas do Better Auth
 ```
@@ -76,10 +108,7 @@ Planejado para as próximas fases:
 
 ```
 WorkSchedule       jornada: tipo (semanal, 12x36, ...), regras por dia
-PunchPolicy        validações exigidas (geo, cerca, selfie, QR); padrão da org ou por usuário
-AllowedLocation    local permitido para a cerca virtual: lat, lng, raio
 Holiday            data, nome, abrangência (nacional, estadual, municipal)
-TimeEntry          marcação: NSR, usuário, horário, geolocalização, selfie, QR, IP, fora_do_horario
 AdjustmentRequest  tipo, datas/horários, justificativa, anexo, status, etapa, referência à anterior
 AdjustmentReview   etapa (gestor | RH), revisor, decisão, comentário, data
 Notification       usuário, tipo, conteúdo, lida
@@ -92,14 +121,18 @@ prisma/               schema, migrations e seed
 src/
   app/
     (auth)/           login, esqueci-senha, definir-senha
-    (app)/            telas autenticadas: inicio, usuarios, setores, configuracoes, auditoria
+    (app)/            telas autenticadas: inicio, ponto, equipe, usuarios, setores, configuracoes, auditoria
+    painel-qr/        painel público do QR code (tablet/monitor na empresa)
     api/auth/         endpoint do Better Auth
+    api/marcacoes/    selfie das marcações (com checagem de permissão)
   components/
     ui/               componentes do shadcn/ui
     app-shell/        barra lateral, menu do celular e itens de navegação
     brand/            marca Pontual
+    timesheet/        marcações agrupadas por dia e navegação por mês
   generated/prisma/   cliente gerado pelo Prisma (não versionado)
-  lib/                código compartilhado e testável: permissões, validação, cores, formatação
+  lib/                código compartilhado e testável: permissões, validação, cores, fuso horário,
+                      regras da batida (cerca virtual, horário comercial), token do QR
   server/             regras de negócio e acesso a dados (somente servidor)
     auth/             configuração do Better Auth e helpers de sessão
   proxy.ts            redirecionamento otimista para o login

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { buttonVariants } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime } from "@/lib/time";
 import { requirePermission } from "@/server/auth/session";
 import { db } from "@/server/db";
 
@@ -21,6 +21,11 @@ const ACTION_LABELS: Record<string, string> = {
   "department.update": "Alterou setor",
   "department.delete": "Excluiu setor",
   "organization.update": "Alterou configurações",
+  "punch_settings.update": "Alterou configurações de ponto",
+  "location.create": "Cadastrou local permitido",
+  "location.update": "Alterou local permitido",
+  "location.delete": "Excluiu local permitido",
+  "qr.rotate": "Gerou novo QR code do painel",
 };
 
 export default async function AuditPage({ searchParams }: { searchParams: Promise<{ pagina?: string }> }) {

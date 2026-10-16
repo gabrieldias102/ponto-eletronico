@@ -19,13 +19,33 @@ type Props = {
     departmentId: string | null;
     active: boolean;
     hasPassword: boolean;
-  };
+  } & Partial<PunchOverrides>;
   roles: Role[];
   departments: { id: string; name: string }[];
+  /** Padrão da empresa, para mostrar no seletor "Padrão da empresa (exige / não exige)". */
+  punchDefaults: { [K in keyof PunchOverrides]: boolean };
   isSelf?: boolean;
 };
 
-export function UserForm({ user, roles, departments, isSelf = false }: Props) {
+type PunchOverrides = {
+  punchRequireGeolocation: boolean | null;
+  punchRequireGeofence: boolean | null;
+  punchRequireSelfie: boolean | null;
+  punchRequireQrCode: boolean | null;
+};
+
+const PUNCH_FIELDS: { name: keyof PunchOverrides; label: string }[] = [
+  { name: "punchRequireGeolocation", label: "Localização" },
+  { name: "punchRequireGeofence", label: "Cerca virtual" },
+  { name: "punchRequireSelfie", label: "Selfie" },
+  { name: "punchRequireQrCode", label: "QR code" },
+];
+
+function triValue(value: boolean | null | undefined) {
+  return value == null ? "default" : value ? "yes" : "no";
+}
+
+export function UserForm({ user, roles, departments, punchDefaults, isSelf = false }: Props) {
   const { state, errors, pending, onSubmit } = useServerForm(saveUser.bind(null, user?.id ?? null));
   const [role, setRole] = useState<Role>(user?.role ?? "EMPLOYEE");
   const [resending, startResend] = useTransition();
@@ -40,7 +60,7 @@ export function UserForm({ user, roles, departments, isSelf = false }: Props) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex max-w-xl flex-col gap-5">
+    <form method="post" onSubmit={onSubmit} className="flex max-w-xl flex-col gap-5">
       <Field label="Nome completo" htmlFor="name" error={errors.name}>
         <Input id="name" name="name" defaultValue={user?.name} required aria-invalid={!!errors.name} />
       </Field>
@@ -94,6 +114,26 @@ export function UserForm({ user, roles, departments, isSelf = false }: Props) {
           </Field>
         ) : null}
       </div>
+
+      {requiresDepartment(role) ? (
+        <fieldset className="flex flex-col gap-3 rounded-lg border p-4">
+          <legend className="px-1 text-sm font-medium">Registro de ponto</legend>
+          <p className="text-xs text-muted-foreground">
+            Exceções às validações da empresa. Ex.: dispensar a cerca virtual para quem trabalha remoto.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {PUNCH_FIELDS.map((f) => (
+              <Field key={f.name} label={f.label} htmlFor={f.name}>
+                <NativeSelect id={f.name} name={f.name} defaultValue={triValue(user?.[f.name])}>
+                  <option value="default">Padrão da empresa ({punchDefaults[f.name] ? "exige" : "não exige"})</option>
+                  <option value="yes">Exigir</option>
+                  <option value="no">Não exigir</option>
+                </NativeSelect>
+              </Field>
+            ))}
+          </div>
+        </fieldset>
+      ) : null}
 
       {user ? (
         <div className="flex items-center gap-2">

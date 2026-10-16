@@ -53,3 +53,6 @@ Thumbs.db
 
 # configuração local do Claude Code
 /.claude/
+
+# arquivos privados locais (desenvolvimento)
+/storage
