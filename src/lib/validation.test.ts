@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  adjustmentSchema,
   allowedLocationSchema,
   organizationSchema,
   punchSettingsSchema,
@@ -148,5 +149,41 @@ describe("scheduleSchema", () => {
     const base = { type: "CYCLE", name: "12x36", description: "", worksOnHolidays: true, days: [[{ start: "07:00", end: "19:00" }], []] };
     expect(scheduleSchema.safeParse({ ...base, cycleStartDate: "2026-10-01" }).success).toBe(true);
     expect(scheduleSchema.safeParse({ ...base, cycleStartDate: "" }).success).toBe(false);
+  });
+});
+
+describe("adjustmentSchema", () => {
+  const absence = {
+    type: "ABSENCE",
+    date: "2026-10-14",
+    endDate: "2026-10-16",
+    partial: false,
+    absenceStart: "",
+    absenceEnd: "",
+    justification: "Atestado médico",
+  };
+
+  it("aceita abono de vários dias", () => {
+    expect(adjustmentSchema.safeParse(absence).success).toBe(true);
+  });
+
+  it("abono parcial é de um único dia, com início antes do término", () => {
+    expect(adjustmentSchema.safeParse({ ...absence, partial: true, absenceStart: "14:00", absenceEnd: "16:00" }).success).toBe(false);
+    expect(
+      adjustmentSchema.safeParse({ ...absence, endDate: "2026-10-14", partial: true, absenceStart: "14:00", absenceEnd: "16:00" }).success,
+    ).toBe(true);
+    expect(
+      adjustmentSchema.safeParse({ ...absence, endDate: "2026-10-14", partial: true, absenceStart: "16:00", absenceEnd: "14:00" }).success,
+    ).toBe(false);
+  });
+
+  it("correção exige a marcação", () => {
+    const r = adjustmentSchema.safeParse({ type: "CORRECTION", date: "2026-10-16", timeEntryId: "", time: "12:00", justification: "" });
+    expect(r.success).toBe(false);
+  });
+
+  it("justificativa vazia vira null", () => {
+    const r = adjustmentSchema.parse({ type: "INCLUSION", date: "2026-10-16", time: "08:00", justification: "  " });
+    expect(r.justification).toBeNull();
   });
 });

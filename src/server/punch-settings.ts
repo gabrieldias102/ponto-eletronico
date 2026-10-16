@@ -95,3 +95,27 @@ export async function rotateQrSecret(actor: CurrentUser) {
     await audit({ actorId: actor.id, action: "qr.rotate", entity: "organization", entityId: ORGANIZATION_ID }, tx);
   });
 }
+
+export async function updateAdjustmentSettings(
+  actor: CurrentUser,
+  input: { adjustmentRequireJustification: boolean; adjustmentRequireAttachment: boolean },
+) {
+  const current = await getOrganization();
+  await db.$transaction(async (tx) => {
+    await tx.organization.update({ where: { id: ORGANIZATION_ID }, data: input });
+    await audit(
+      {
+        actorId: actor.id,
+        action: "adjustment_settings.update",
+        entity: "organization",
+        entityId: ORGANIZATION_ID,
+        before: {
+          adjustmentRequireJustification: current.adjustmentRequireJustification,
+          adjustmentRequireAttachment: current.adjustmentRequireAttachment,
+        },
+        after: input,
+      },
+      tx,
+    );
+  });
+}

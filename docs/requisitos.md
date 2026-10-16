@@ -99,7 +99,8 @@ organização e pode ser **sobrescrita por funcionário** (ex.: quem trabalha re
 
 ### 6.2 Regras
 
-- **Justificativa** e **anexo** (foto, PDF) são opcionais por padrão. O Administrador pode tornar cada um obrigatório.
+- **Justificativa** e **anexo** (foto ou PDF, até 5 MB) são opcionais por padrão. O Administrador pode tornar cada um
+  obrigatório (Configurações → Registro de ponto). O anexo é privado: só o solicitante, o gestor do setor e o RH veem.
 - Não há prazo para solicitar ajustes.
 - A marcação original **é sempre mantida**. O ajuste é registrado como tratamento à parte, que prevalece
   no cálculo da jornada (exigência de auditoria e da Portaria 671).
@@ -124,6 +125,10 @@ Usuário solicita
 - O usuário pode **reenviar** uma solicitação rejeitada. A nova solicitação guarda referência à anterior.
 - O solicitante pode **cancelar** enquanto a solicitação estiver pendente.
 - Autoaprovação (ex.: gestor aprovando o próprio pedido) **não é tratada no momento** (ver `TODO.md`).
+- Setor sem gestor: a solicitação vai direto para o RH.
+- Inclusão e correção não podem ser para horários futuros. Abono pode ser pedido com até 60 dias de
+  antecedência e cobre no máximo 31 dias; abono de parte do dia vale para um único dia.
+- No histórico, a marcação corrigida continua visível como "desconsiderada", ao lado do horário ajustado.
 
 ### 6.4 Notificações
 

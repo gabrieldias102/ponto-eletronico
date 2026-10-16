@@ -5,12 +5,13 @@ import { PageHeader } from "@/components/page-header";
 import { EntriesByDay } from "@/components/timesheet/entries-by-day";
 import { buttonVariants } from "@/components/ui/button";
 import { MAX_PUNCHES_PER_DAY } from "@/lib/punch-rules";
-import { formatLongDay } from "@/lib/time";
+import { dateKey, dayRange, formatLongDay } from "@/lib/time";
 import { requirePermission } from "@/server/auth/session";
 import { getOrganization } from "@/server/organization";
 import { entriesOfDay, getRequirementsFor } from "@/server/time-entries";
 import { scheduleWindow } from "@/server/schedules";
 import { describePeriods } from "@/lib/schedule";
+import { approvedAdjustmentsInRange } from "@/server/adjustments";
 import { PunchPanel } from "./punch-panel";
 
 export const metadata: Metadata = { title: "Registrar ponto" };
@@ -38,6 +39,10 @@ export default async function PunchPage({ searchParams }: { searchParams: Promis
     getOrganization(),
     scheduleWindow(user.id, new Date()),
   ]);
+
+  const todayKey = dateKey(new Date());
+  const todayRange = dayRange(new Date());
+  const todayAdjustments = await approvedAdjustmentsInRange(user.id, todayRange.start, todayRange.end, todayKey, todayKey);
 
   const hours = window.hasSchedule
     ? {
@@ -80,7 +85,7 @@ export default async function PunchPage({ searchParams }: { searchParams: Promis
           <h2 className="mb-3 text-sm font-medium text-muted-foreground">
             Hoje · {today.length} de {MAX_PUNCHES_PER_DAY} marcações
           </h2>
-          <EntriesByDay entries={today} detailed />
+          <EntriesByDay entries={today} adjustments={todayAdjustments} range={{ firstDay: todayKey, lastDay: todayKey }} />
         </section>
       </div>
     </>

@@ -80,7 +80,9 @@ export function useServerForm(action: FormAction) {
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+    // Inclui o botão que enviou (name/value), como no envio nativo.
+    const submitter = (event.nativeEvent as SubmitEvent).submitter;
+    const formData = new FormData(event.currentTarget, submitter);
     startTransition(() => dispatch(formData));
   }
 

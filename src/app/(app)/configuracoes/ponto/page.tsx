@@ -6,6 +6,7 @@ import { baseUrl } from "@/server/base-url";
 import { getOrganization } from "@/server/organization";
 import { listAllowedLocations } from "@/server/punch-settings";
 import { getQrSecret } from "@/server/time-entries";
+import { AdjustmentSettingsForm } from "./adjustment-settings-form";
 import { Locations } from "./locations";
 import { PunchSettingsForm } from "./punch-settings-form";
 import { QrPanel } from "./qr-panel";
@@ -36,6 +37,8 @@ export default async function PunchSettingsPage() {
           entryCount: l._count.timeEntries,
         }))}
       />
+      <Separator className="max-w-xl" />
+      <AdjustmentSettingsForm settings={organization} />
       <Separator className="max-w-xl" />
       <QrPanel url={`${base}/painel-qr?chave=${kioskKey(secret)}`} />
     </div>

@@ -21,6 +21,33 @@ enum ScheduleType {
   CYCLE
 }
 
+enum AdjustmentType {
+  /// Esqueceu de bater: inclui uma marcação
+  INCLUSION
+  /// Bateu no horário errado: desconsidera a marcação original e inclui o horário correto
+  CORRECTION
+  /// Abono de falta ou de período (ex.: atestado)
+  ABSENCE
+}
+
+enum AdjustmentStatus {
+  PENDING_MANAGER
+  PENDING_HR
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum ReviewStep {
+  MANAGER
+  HR
+}
+
+enum ReviewDecision {
+  APPROVED
+  REJECTED
+}
+
 enum HolidayScope {
   NATIONAL
   STATE
@@ -57,6 +84,10 @@ model Organization {
   /// Margem antes/depois da jornada em que a batida não gera aviso de "fora do horário".
   scheduleWarningMarginMinutes Int @default(30)
 
+  // Solicitações de ajuste
+  adjustmentRequireJustification Boolean @default(false)
+  adjustmentRequireAttachment    Boolean @default(false)
+
   updatedAt DateTime @updatedAt
 
   @@map("organization")
@@ -79,25 +110,26 @@ model AllowedLocation {
 
 /// Marcação de ponto. Imutável: um trigger no banco bloqueia UPDATE e DELETE.
 model TimeEntry {
-  id                   String           @id @default(cuid())
+  id                   String              @id @default(cuid())
   /// Número Sequencial de Registro (Portaria 671), sem lacunas.
-  nsr                  BigInt           @unique
+  nsr                  BigInt              @unique
   userId               String
-  user                 User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Restrict)
   /// Hora do servidor no momento da batida.
-  punchedAt            DateTime         @db.Timestamptz(3)
+  punchedAt            DateTime            @db.Timestamptz(3)
   latitude             Float?
   longitude            Float?
   accuracyMeters       Float?
   allowedLocationId    String?
-  allowedLocation      AllowedLocation? @relation(fields: [allowedLocationId], references: [id], onDelete: Restrict)
+  allowedLocation      AllowedLocation?    @relation(fields: [allowedLocationId], references: [id], onDelete: Restrict)
+  corrections          AdjustmentRequest[]
   /// Chave do arquivo privado da selfie.
   selfieKey            String?
-  qrVerified           Boolean          @default(false)
-  outsideBusinessHours Boolean          @default(false)
+  qrVerified           Boolean             @default(false)
+  outsideBusinessHours Boolean             @default(false)
   ip                   String?
   userAgent            String?
-  createdAt            DateTime         @default(now()) @db.Timestamptz(3)
+  createdAt            DateTime            @default(now()) @db.Timestamptz(3)
 
   @@index([userId, punchedAt])
   @@index([punchedAt])
@@ -150,6 +182,9 @@ model User {
   auditLogs           AuditLog[]
   timeEntries         TimeEntry[]
   scheduleAssignments ScheduleAssignment[]
+  adjustmentRequests  AdjustmentRequest[]  @relation("AdjustmentRequester")
+  adjustmentReviews   AdjustmentReview[]
+  notifications       Notification[]
 
   @@index([departmentId])
   @@map("users")
@@ -275,4 +310,77 @@ model Holiday {
   @@unique([date, name])
   @@index([date])
   @@map("holidays")
+}
+
+/// Solicitação de ajuste de ponto. Aprovada, vira tratamento sobre as marcações (que nunca mudam).
+model AdjustmentRequest {
+  id     String           @id @default(cuid())
+  userId String
+  user   User             @relation("AdjustmentRequester", fields: [userId], references: [id], onDelete: Restrict)
+  type   AdjustmentType
+  status AdjustmentStatus
+
+  /// Dia do ajuste (YYYY-MM-DD). No abono, o primeiro dia.
+  date    String
+  /// Abono de vários dias: último dia (inclusive).
+  endDate String?
+
+  /// INCLUSION/CORRECTION: horário pedido (instante UTC calculado a partir de date + hora local).
+  requestedAt DateTime?  @db.Timestamptz(3)
+  /// CORRECTION: marcação que será desconsiderada.
+  timeEntryId String?
+  timeEntry   TimeEntry? @relation(fields: [timeEntryId], references: [id], onDelete: Restrict)
+
+  /// ABSENCE parcial (um único dia): período abonado em hora local "HH:mm".
+  absenceStart String?
+  absenceEnd   String?
+
+  justification  String?
+  attachmentKey  String?
+  attachmentName String?
+  attachmentType String?
+
+  /// Reenvio de uma solicitação rejeitada.
+  previousRequestId String?
+  previousRequest   AdjustmentRequest?  @relation("Resubmission", fields: [previousRequestId], references: [id], onDelete: SetNull)
+  resubmissions     AdjustmentRequest[] @relation("Resubmission")
+
+  reviews   AdjustmentReview[]
+  decidedAt DateTime?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@index([userId, date])
+  @@index([status])
+  @@map("adjustment_requests")
+}
+
+model AdjustmentReview {
+  id         String            @id @default(cuid())
+  requestId  String
+  request    AdjustmentRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  step       ReviewStep
+  reviewerId String
+  reviewer   User              @relation(fields: [reviewerId], references: [id], onDelete: Restrict)
+  decision   ReviewDecision
+  comment    String?
+  createdAt  DateTime          @default(now())
+
+  @@index([requestId])
+  @@map("adjustment_reviews")
+}
+
+/// Notificação dentro do sistema (também enviada por e-mail).
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt])
+  @@map("notifications")
 }
