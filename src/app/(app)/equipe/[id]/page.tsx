@@ -7,10 +7,11 @@ import { EntriesByDay } from "@/components/timesheet/entries-by-day";
 import { MonthNav } from "@/components/timesheet/month-nav";
 import { buttonVariants } from "@/components/ui/button";
 import { ROLE_LABELS } from "@/lib/permissions";
-import { monthKey, parseMonthKey } from "@/lib/time";
+import { dateKey, monthKey, parseMonthKey } from "@/lib/time";
 import { requirePermission } from "@/server/auth/session";
 import { db } from "@/server/db";
 import { canViewTimesheetOf } from "@/server/team";
+import { approvedAdjustmentsInRange } from "@/server/adjustments";
 
 export const metadata: Metadata = { title: "Ponto do funcionário" };
 
@@ -44,6 +45,9 @@ export default async function MemberTimesheetPage({
     },
   });
   if (!member) notFound();
+  const firstDay = `${month}-01`;
+  const lastDay = dateKey(new Date(range.end.getTime() - 1));
+  const adjustments = await approvedAdjustmentsInRange(id, range.start, range.end, firstDay, lastDay);
 
   return (
     <>
@@ -55,7 +59,7 @@ export default async function MemberTimesheetPage({
         description={[ROLE_LABELS[member.role], member.department?.name].filter(Boolean).join(" · ")}
       />
       <MonthNav month={month} basePath={`/equipe/${id}`} />
-      <EntriesByDay entries={member.timeEntries} detailed />
+      <EntriesByDay entries={member.timeEntries} adjustments={adjustments} range={{ firstDay, lastDay }} />
     </>
   );
 }

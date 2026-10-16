@@ -172,3 +172,55 @@ export const toleranceSchema = z.object({
 });
 
 export type ToleranceInput = z.infer<typeof toleranceSchema>;
+
+const dateKeySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Informe a data.");
+const justificationSchema = z
+  .string()
+  .trim()
+  .max(1000, "Use no máximo 1.000 caracteres.")
+  .transform((v) => (v === "" ? null : v));
+
+export const adjustmentSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("INCLUSION"),
+    date: dateKeySchema,
+    time: timeOfDay,
+    justification: justificationSchema,
+  }),
+  z.object({
+    type: z.literal("CORRECTION"),
+    date: dateKeySchema,
+    timeEntryId: z.string().min(1, "Selecione a marcação a corrigir."),
+    time: timeOfDay,
+    justification: justificationSchema,
+  }),
+  z
+    .object({
+      type: z.literal("ABSENCE"),
+      date: dateKeySchema,
+      endDate: dateKeySchema,
+      partial: z.boolean(),
+      absenceStart: z.string(),
+      absenceEnd: z.string(),
+      justification: justificationSchema,
+    })
+    .superRefine((d, ctx) => {
+      if (d.endDate < d.date) ctx.addIssue({ code: "custom", path: ["endDate"], message: "O último dia deve ser depois do primeiro." });
+      if (d.partial) {
+        if (d.endDate !== d.date) {
+          ctx.addIssue({ code: "custom", path: ["endDate"], message: "Abono de período parcial vale para um único dia." });
+        }
+        const hhmm = /^([01]\d|2[0-3]):([0-5]\d)$/;
+        if (!hhmm.test(d.absenceStart)) ctx.addIssue({ code: "custom", path: ["absenceStart"], message: "Informe o início." });
+        if (!hhmm.test(d.absenceEnd)) ctx.addIssue({ code: "custom", path: ["absenceEnd"], message: "Informe o término." });
+        if (hhmm.test(d.absenceStart) && hhmm.test(d.absenceEnd) && d.absenceEnd <= d.absenceStart) {
+          ctx.addIssue({ code: "custom", path: ["absenceEnd"], message: "O término deve ser depois do início." });
+        }
+      }
+    }),
+]);
+
+export type AdjustmentInput = z.infer<typeof adjustmentSchema>;
+
+export const ATTACHMENT_MAX_BYTES = 5 * 1024 * 1024;
+export const ATTACHMENT_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];

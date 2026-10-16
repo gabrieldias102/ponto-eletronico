@@ -33,7 +33,15 @@ export async function sendEmail(email: Email) {
   if (error) throw new Error(`Falha ao enviar e-mail: ${error.message}`);
 }
 
-function layout(title: string, body: string, action: { label: string; url: string }) {
+/** Escapa texto para HTML: nomes, comentários e títulos vêm de usuários. */
+function escapeHtml(value: string) {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function layout(rawTitle: string, rawBody: string, rawAction: { label: string; url: string }) {
+  const title = escapeHtml(rawTitle);
+  const body = escapeHtml(rawBody);
+  const action = { label: escapeHtml(rawAction.label), url: escapeHtml(rawAction.url) };
   return `<!doctype html>
 <html lang="pt-BR">
   <body style="font-family: system-ui, sans-serif; background: #f5f5f5; padding: 24px; color: #171717;">
@@ -63,5 +71,14 @@ export function resetPasswordEmail(params: { name: string; url: string }): Omit<
     subject: "Redefinição de senha — Pontual",
     html: layout("Redefinir senha", body, { label: "Redefinir senha", url: params.url }),
     text: `${body}\n\nRedefinir senha: ${params.url}`,
+  };
+}
+
+export function notificationEmail(params: { name: string; title: string; body: string; url: string }): Omit<Email, "to"> {
+  const body = `Olá, ${params.name}! ${params.body}`;
+  return {
+    subject: `${params.title} — Pontual`,
+    html: layout(params.title, body, { label: "Abrir no Pontual", url: params.url }),
+    text: `${body}\n\n${params.url}`,
   };
 }

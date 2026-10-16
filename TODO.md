@@ -7,7 +7,7 @@ Itens planejados que **não** fazem parte do escopo atual. Ao concluir um item, 
 - [x] **Fase 1 — Base**: setup, autenticação, perfis, setores, cadastro de usuários, configurações, identidade visual (branch `feat/fase-1-base`)
 - [x] **Fase 2 — Ponto**: batidas com NSR, aviso fora do horário, validações configuráveis (branch `feat/fase-2-ponto`)
 - [x] **Fase 3 — Jornadas**: escalas, feriados, tolerância (branch `feat/fase-3-jornadas`)
-- [ ] **Fase 4 — Ajustes**: solicitação, aprovação em duas etapas, notificações
+- [x] **Fase 4 — Ajustes**: solicitação, aprovação em duas etapas, notificações (branch `feat/fase-4-ajustes`)
 - [ ] **Fase 5 — Cálculos** (ver abaixo)
 - [ ] **Fase 6 — Dashboard e exportação**
 - [ ] **Fase 7 — Portaria 671** (ver abaixo)
@@ -52,6 +52,14 @@ Itens planejados que **não** fazem parte do escopo atual. Ao concluir um item, 
 - [x] Nome, logo e favicon do aplicativo: **Pontual**
 - [ ] Autoaprovação: quem aprova o ajuste de um gestor do próprio setor, ou de alguém do RH
 - [ ] Política de retenção de selfies e anexos (LGPD)
+
+## Melhorias levantadas na Fase 4
+
+- [ ] Aprovação em lote na fila de aprovações
+- [ ] Preferências de notificação por e-mail (ex.: resumo diário para gestores)
+- [ ] Notificação em tempo real (hoje o contador atualiza ao navegar)
+- [ ] Destacar no menu "Aprovações" (e não "Meus ajustes") quando o aprovador abre a solicitação de outra pessoa
+- [ ] Lembrete de solicitações pendentes há mais de N dias
 
 ## Melhorias levantadas na Fase 3
 

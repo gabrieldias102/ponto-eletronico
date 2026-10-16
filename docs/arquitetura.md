@@ -86,6 +86,26 @@
 - **Quem atribui jornada:** Admin e RH (quem cadastra funcionários). Criar e editar jornadas, feriados e
   tolerância é só do Admin (`schedules:manage`).
 
+### 1.4 Decisões da Fase 4 (ajustes)
+
+- **Ajuste é tratamento, não edição.** `AdjustmentRequest` aprovado entra no cálculo por cima das marcações
+  (`effectivePunches` em `src/lib/adjustments.ts`): inclusão vira marcação tratada; correção desconsidera a
+  marcação original (que continua visível, riscada) e inclui o horário correto; abono marca o dia ou o período.
+- **Fluxo:** `PENDING_MANAGER` → `PENDING_HR` → `APPROVED`; rejeição em qualquer etapa (com comentário
+  obrigatório) → `REJECTED`; o solicitante cancela enquanto pendente → `CANCELLED`. Setor sem gestor começa
+  em `PENDING_HR`. Cada decisão gera um `AdjustmentReview`.
+- **Quem decide:** etapa do gestor = gestor do setor do solicitante (ou Admin); etapa do RH = RH (ou Admin).
+  Autoaprovação não é bloqueada (decisão do produto, revisitável).
+- **Concorrência:** a decisão usa `updateMany where status = <status lido>`; se outra pessoa decidiu antes,
+  nada muda e o usuário vê o aviso.
+- **Reenvio** cria uma nova solicitação com `previousRequestId`; cada rejeitada pode ser reenviada uma vez.
+- **Limites:** inclusão/correção não podem ser para o futuro; abono até 60 dias à frente e no máximo 31 dias;
+  o limite de 8 marcações por dia conta ajustes pendentes e aprovados.
+- **Anexos privados** (imagem ou PDF até 5 MB), servidos por `/api/ajustes/[id]/anexo` com checagem de acesso
+  e `no-store`.
+- **Notificações** (`Notification`) no sistema e por e-mail, enviadas depois do commit da transação; falha no
+  e-mail não desfaz a ação. Os textos do e-mail passam por escape de HTML.
+
 ## 2. Convenções
 
 - **Código** (variáveis, funções, tabelas, rotas de API) em **inglês**.
@@ -121,6 +141,10 @@ AllowedLocation    local permitido da cerca virtual: nome, lat, lng, raio, ativo
 WorkSchedule       jornada: tipo (semanal | ciclo), períodos (JSON), início do ciclo, trabalha em feriados
 ScheduleAssignment histórico de jornadas do funcionário: jornada, data de início
 Holiday            feriado: data, nome, abrangência (nacional, estadual, municipal)
+AdjustmentRequest  solicitação de ajuste: tipo, status, dia(s), horário pedido, marcação corrigida,
+                   período do abono, justificativa, anexo, reenvio de
+AdjustmentReview   decisão por etapa (gestor | RH): revisor, aprovação/rejeição, comentário
+Notification       notificação do usuário: título, texto, link, lida em
 TimeEntry          marcação imutável: NSR, usuário, horário, localização, local, selfie, QR,
                    fora do horário, IP, user agent
 NsrCounter         contador do NSR (linha única)
@@ -131,9 +155,6 @@ Session, Account, Verification   tabelas do Better Auth
 Planejado para as próximas fases:
 
 ```
-AdjustmentRequest  tipo, datas/horários, justificativa, anexo, status, etapa, referência à anterior
-AdjustmentReview   etapa (gestor | RH), revisor, decisão, comentário, data
-Notification       usuário, tipo, conteúdo, lida
 ```
 
 ## 5. Estrutura de pastas
@@ -143,10 +164,12 @@ prisma/               schema, migrations e seed
 src/
   app/
     (auth)/           login, esqueci-senha, definir-senha
-    (app)/            telas autenticadas: inicio, ponto, equipe, usuarios, setores, jornadas, configuracoes, auditoria
+    (app)/            telas autenticadas: inicio, ponto, ajustes, aprovacoes, notificacoes, equipe, usuarios,
+                      setores, jornadas, configuracoes, auditoria
     painel-qr/        painel público do QR code (tablet/monitor na empresa)
     api/auth/         endpoint do Better Auth
     api/marcacoes/    selfie das marcações (com checagem de permissão)
+    api/ajustes/      anexo das solicitações de ajuste (com checagem de permissão)
   components/
     ui/               componentes do shadcn/ui
     app-shell/        barra lateral, menu do celular e itens de navegação

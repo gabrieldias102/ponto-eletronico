@@ -10,6 +10,7 @@ import {
   deleteAllowedLocation,
   rotateQrSecret,
   setAllowedLocationActive,
+  updateAdjustmentSettings,
   updatePunchSettings,
 } from "@/server/punch-settings";
 
@@ -71,4 +72,14 @@ export async function rotateQr(): Promise<ActionState> {
   await rotateQrSecret(actor);
   revalidatePath(PATH);
   return { ok: true, message: "Novo QR code gerado. Abra o novo link no painel." };
+}
+
+export async function saveAdjustmentSettings(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const actor = await requirePermission("settings:manage");
+  await updateAdjustmentSettings(actor, {
+    adjustmentRequireJustification: formData.get("adjustmentRequireJustification") === "on",
+    adjustmentRequireAttachment: formData.get("adjustmentRequireAttachment") === "on",
+  });
+  revalidatePath(PATH);
+  return { ok: true, message: "Configurações de ajustes salvas." };
 }
