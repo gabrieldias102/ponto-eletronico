@@ -1,7 +1,7 @@
 # Requisitos do Sistema de Ponto Eletrônico
 
 > Documento vivo. Toda mudança de requisito deve ser feita via PR, com o motivo descrito.
-> Última revisão: 2026-10-16.
+> Última revisão: 2026-10-16 (Fase 1).
 
 ## 1. Visão geral
 
@@ -48,7 +48,7 @@ controle de jornada, solicitação e aprovação de ajustes, e conformidade com 
 
 ### 3.1 Identidade visual
 
-- O **aplicativo** tem nome, logo e favicon próprios e fixos (tela de login, aba do navegador, ícone do PWA).
+- O **aplicativo** se chama **Pontual** e tem logo e favicon próprios e fixos (tela de login, aba do navegador, ícone do PWA).
 - A **organização** pode personalizar, dentro do sistema: logo, cores principais e nome exibido.
 
 ## 4. Autenticação e cadastro
