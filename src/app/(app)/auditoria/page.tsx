@@ -36,6 +36,11 @@ const ACTION_LABELS: Record<string, string> = {
   "holiday.delete": "Excluiu feriado",
   "holiday.import": "Importou feriados nacionais",
   "tolerance.update": "Alterou tolerância",
+  "adjustment.create": "Solicitou ajuste",
+  "adjustment.cancel": "Cancelou ajuste",
+  "adjustment.approve": "Aprovou ajuste",
+  "adjustment.reject": "Rejeitou ajuste",
+  "adjustment_settings.update": "Alterou configurações de ajustes",
 };
 
 export default async function AuditPage({ searchParams }: { searchParams: Promise<{ pagina?: string }> }) {

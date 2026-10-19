@@ -4,9 +4,12 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
+  BellIcon,
   Building2Icon,
   CalendarClockIcon,
+  ClipboardCheckIcon,
   ClockIcon,
+  FilePenLineIcon,
   HomeIcon,
   LogOutIcon,
   MenuIcon,
@@ -25,6 +28,8 @@ import type { NavItem } from "./nav";
 const ICONS = {
   home: HomeIcon,
   clock: ClockIcon,
+  adjustments: FilePenLineIcon,
+  approvals: ClipboardCheckIcon,
   team: UsersRoundIcon,
   users: UsersIcon,
   departments: Building2Icon,
@@ -37,8 +42,27 @@ type Props = {
   items: NavItem[];
   user: { name: string; roleLabel: string };
   organization: { name: string; logoUrl: string | null };
+  unreadNotifications: number;
   children: React.ReactNode;
 };
+
+function NotificationBell({ count }: { count: number }) {
+  return (
+    <Link
+      href="/notificacoes"
+      className="relative inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+      aria-label={count > 0 ? `Notificações: ${count} não lidas` : "Notificações"}
+      title="Notificações"
+    >
+      <BellIcon className="size-4" />
+      {count > 0 ? (
+        <span className="absolute top-1 right-1 flex min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] leading-4 font-semibold text-white tabular-nums">
+          {count > 99 ? "99+" : count}
+        </span>
+      ) : null}
+    </Link>
+  );
+}
 
 function OrganizationBadge({ organization }: Pick<Props, "organization">) {
   return (
@@ -73,7 +97,17 @@ function NavLinks({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => 
             )}
           >
             <Icon className="size-4" />
-            {item.label}
+            <span className="flex-1">{item.label}</span>
+            {item.badge ? (
+              <span
+                className={cn(
+                  "min-w-5 rounded-full px-1.5 text-center text-xs leading-5 font-semibold tabular-nums",
+                  active ? "bg-primary-foreground/20" : "bg-primary text-primary-foreground",
+                )}
+              >
+                {item.badge}
+              </span>
+            ) : null}
           </Link>
         );
       })}
@@ -101,15 +135,18 @@ function UserFooter({ user }: Pick<Props, "user">) {
   );
 }
 
-export function AppShell({ items, user, organization, children }: Props) {
+export function AppShell({ items, user, organization, unreadNotifications, children }: Props) {
   const [open, setOpen] = useState(false);
 
   return (
     <div className="flex min-h-svh">
       {/* Barra lateral (desktop) */}
       <aside className="sticky top-0 hidden h-svh w-64 shrink-0 flex-col gap-6 border-r bg-sidebar p-4 md:flex">
-        <OrganizationBadge organization={organization} />
-        <div className="flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <OrganizationBadge organization={organization} />
+          <NotificationBell count={unreadNotifications} />
+        </div>
+        <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
           <NavLinks items={items} />
         </div>
         <UserFooter user={user} />
@@ -120,21 +157,24 @@ export function AppShell({ items, user, organization, children }: Props) {
         {/* Cabeçalho (celular) */}
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b bg-background px-4 md:hidden">
           <OrganizationBadge organization={organization} />
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger render={<Button variant="ghost" size="icon" aria-label="Abrir menu" />}>
-              <MenuIcon />
-            </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col gap-6 p-4">
-              <SheetTitle>
-                <OrganizationBadge organization={organization} />
-              </SheetTitle>
-              <div className="flex-1">
-                <NavLinks items={items} onNavigate={() => setOpen(false)} />
-              </div>
-              <UserFooter user={user} />
-              <PontualLogo className="justify-center text-muted-foreground [&_svg]:size-5 [&>span]:text-sm" />
-            </SheetContent>
-          </Sheet>
+          <div className="flex items-center gap-1">
+            <NotificationBell count={unreadNotifications} />
+            <Sheet open={open} onOpenChange={setOpen}>
+              <SheetTrigger render={<Button variant="ghost" size="icon" aria-label="Abrir menu" />}>
+                <MenuIcon />
+              </SheetTrigger>
+              <SheetContent side="left" className="flex flex-col gap-6 p-4">
+                <SheetTitle>
+                  <OrganizationBadge organization={organization} />
+                </SheetTitle>
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                  <NavLinks items={items} onNavigate={() => setOpen(false)} />
+                </div>
+                <UserFooter user={user} />
+                <PontualLogo className="justify-center text-muted-foreground [&_svg]:size-5 [&>span]:text-sm" />
+              </SheetContent>
+            </Sheet>
+          </div>
         </header>
 
         <main className="mx-auto w-full max-w-5xl flex-1 p-4 md:p-8">{children}</main>

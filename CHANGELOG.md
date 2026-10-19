@@ -5,6 +5,25 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ## [Não lançado]
 
+### Adicionado — Fase 4 (ajustes)
+
+- **Meus ajustes**: solicitações de inclusão de marcação, correção de marcação e abono (dia inteiro, vários dias
+  ou parte de um dia), com justificativa e comprovante opcionais (foto ou PDF, privado)
+- Atalhos no histórico: "Incluir marcação" no dia e "Corrigir" em cada marcação
+- **Aprovações** em duas etapas: gestor do setor e RH (Admin decide nas duas); rejeição com comentário
+  obrigatório; aba "Decididas por mim"; contador de pendências no menu
+- Linha do tempo da solicitação (envio, decisões, comentários), **cancelamento** enquanto pendente e
+  **reenvio** de solicitação rejeitada, já preenchido e vinculado à anterior
+- **Marcações tratadas** no histórico, no ponto da equipe e na tela de registro: ajuste aprovado aparece como
+  "incluída/corrigida por ajuste", a marcação corrigida fica visível como "desconsiderada" e o abono aparece no dia
+- **Notificações** no sistema (sino com contador e página de notificações) e por e-mail a cada etapa
+- Configuração para exigir justificativa e/ou comprovante
+
+### Corrigido
+
+- Textos dos e-mails (nomes, comentários) agora passam por escape de HTML
+- Formulários enviam o botão clicado (`submitter`), como no envio nativo
+
 ### Adicionado — Fase 3 (jornadas)
 
 - Menu **Jornadas** (Administrador) com as abas Jornadas, Feriados e Tolerância
